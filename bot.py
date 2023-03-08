@@ -25,7 +25,6 @@ timeformat = "%A %I:%M%p"
 
 COOLDOWN = 2
 
-
 def get_exception():
     exc_type, exc_obj, tb = sys.exc_info()
     f = tb.tb_frame
