@@ -6,6 +6,7 @@ import math
 import sys
 import linecache
 import uwuifier.uwuify as uwu
+import openai
 from wakeonlan import send_magic_packet
 from datetime import datetime
 from PIL import Image
@@ -15,11 +16,15 @@ from config import token
 from config import postsUrl
 from config import weatherUrl
 from config import forecastUrl
+from config import openaikey
+from config import apiprompt
 
+openai.api_key = openaikey
 
 timeformat = "%A %I:%M%p"
 
 COOLDOWN = 2
+
 
 def get_exception():
     exc_type, exc_obj, tb = sys.exc_info()
@@ -30,24 +35,30 @@ def get_exception():
     line = linecache.getline(filename, lineno, f.f_globals)
     return 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
 
+
 dance = '<a:dance1:779548089547620352><a:dance2:779548089228722187><a:dance3:779548089509740545>'
 
-client = discord.Client()
+intents = discord.Intents.default()
+# intents.message_content = True
+client = discord.Client(intents=intents)
 
 client.agreeCounter = 0
 
 asciilogo = os.popen('screenfetch -N -L').read().replace("`", "'")
 
+client.hist = {}
+
 client.last_response_time = datetime.now() - timedelta(minutes=COOLDOWN + 1)
+
 
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
+    aiprompt.append({"role": "system", "content": "<@{0.user.id}> is your name".format(client)})
 
 
 @client.event
 async def on_message(message):
-
     if message.author == client.user:
         return
 
@@ -63,6 +74,23 @@ async def on_message(message):
     #     ms = requests.get(postsUrl).json()["result_data"]["items"][0]["content"]
     #     await message.channel.send(ms)
 
+    if message.content.startswith('resethistory'):
+        client.hist = {}
+        await message.channel.send('history deleted')
+
+    if client.user.mentioned_in(message):
+        async with message.channel.typing():
+            if message.channel.id not in client.hist:
+                client.hist[message.channel.id] = aiprompt.copy()
+            client.hist[message.channel.id].append({"role": "user", "content": message.content})
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=client.hist[message.channel.id],
+                max_tokens=64
+            )
+            client.hist[message.channel.id].append(
+                {"role": "assistant", "content": response['choices'][0]['message']['content']})
+            await message.channel.send(response['choices'][0]['message']['content'])
     # if message.content.startswith('weather'):
     #     ms = ""
     #     weather = requests.get(weatherUrl).json()
@@ -97,20 +125,22 @@ async def on_message(message):
     #             await message.channel.send(ms)
     #             break
     if message.content.startswith('fortune'):
-        #print("fortune triggered")
+        # print("fortune triggered")
         await message.channel.send(os.popen('/usr/games/fortune').read())
 
-    #if message.content.startswith('!meme'):
+    # if message.content.startswith('!meme'):
     #    await message.channel.send('!meme ' + os.popen('fortune -s').read())
 
-    #if message.content.startswith('!generatememe'):
+    # if message.content.startswith('!generatememe'):
     #    await message.channel.send('!generatememe ' + os.popen('fortune -s').read())
 
     if message.content.startswith('whoami'):
         await message.channel.send(os.popen('whoami').read())
 
     if message.content.startswith('!vote'):
-        await message.channel.send('. 　。　　　　•　 　ﾟ　　。 　　.\n　　　.　　　 　　.　　　　　。　　 。　. 　.　\n　 。　 ඞ 。　 . • . ' + message.content[6:] + ' was ejected. . .\n 　 。　. 　 　　。　　　　　　\nﾟ　　　.　　　　　. ,　　　　.　 .　　 .')
+        await message.channel.send(
+            '. 　。　　　　•　 　ﾟ　　。 　　.\n　　　.　　　 　　.　　　　　。　　 。　. 　.　\n　 。　 ඞ 。　 . • . ' +
+            message.content[6:] + ' was ejected. . .\n 　 。　. 　 　　。　　　　　　\nﾟ　　　.　　　　　. ,　　　　.　 .　　 .')
 
     if message.content.lower().startswith('what is love'):
         await message.channel.send('baby don\'t hurt me')
@@ -129,7 +159,7 @@ async def on_message(message):
 
                 m = re.search("unit=ft", message.content)
                 if m:
-                    a=-32.174
+                    a = -32.174
 
                 m = re.search("p=\((-?\d*\.?\d*), ?(-?\d*\.?\d*)\)", message.content)
                 if m:
@@ -194,7 +224,8 @@ async def on_message(message):
                 print(get_exception())
 
     if message.content.startswith('!dance'):
-        await message.channel.send('<a:dance1:779548089547620352><a:dance2:779548089228722187><a:dance3:779548089509740545>')
+        await message.channel.send(
+            '<a:dance1:779548089547620352><a:dance2:779548089228722187><a:dance3:779548089509740545>')
 
     if message.content.startswith('speedtest'):
         async with message.channel.typing():
@@ -204,33 +235,35 @@ async def on_message(message):
         await message.channel.send('```' + asciilogo + os.popen("screenfetch -N -n -d '-host'").read() + '```')
 
     if message.content.startswith('!ascii'):
-            async with message.channel.typing():
-                if len(message.attachments) > 0:  # If the user included an image
-                    filename = '/home/enicely/lastimage'
-                    await message.attachments[0].save(filename)
-                    im1 = Image.open(filename).convert('RGB')
-                    im1.save(filename + '.jpg')
-                    await message.channel.send('```' + os.popen('jp2a ' + filename + '.jpg --width=44').read() + '```')
+        async with message.channel.typing():
+            if len(message.attachments) > 0:  # If the user included an image
+                filename = '/home/enicely/lastimage'
+                await message.attachments[0].save(filename)
+                im1 = Image.open(filename).convert('RGB')
+                im1.save(filename + '.jpg')
+                await message.channel.send('```' + os.popen('jp2a ' + filename + '.jpg --width=44').read() + '```')
 
     if message.content.startswith('uwu') or message.content.startswith('owo'):
         await message.channel.send(uwu.uwuify_string(message.content[4:]))
 
-    if message.content.lower().startswith('agree') and ((datetime.now() - client.last_response_time) > timedelta(minutes=COOLDOWN)):
+    if message.content.lower().startswith('agree') and (
+            (datetime.now() - client.last_response_time) > timedelta(minutes=COOLDOWN)):
         await message.channel.send('Agree')
         client.last_response_time = datetime.now()
 
     # if message.content.startswith('!print'):
-        # with open('pic1.jpg', 'wb') as handle:
-           # response = requests.get('http://localhost:8080/?action=snapshot', stream=True)
-           # if not response.ok:
-                # print(response)
-           # for block in response.iter_content(1024):
-                # if not block:
-                    # break
-                # handle.write(block)
-        # img1 = Image.open('pic1.jpg')
-        # img2 = img1.rotate(180, expand=True)
-        # img2.save('pic2.jpg')
-        # await message.channel.send(file=discord.File('pic2.jpg'))
+    # with open('pic1.jpg', 'wb') as handle:
+    # response = requests.get('http://localhost:8080/?action=snapshot', stream=True)
+    # if not response.ok:
+    # print(response)
+    # for block in response.iter_content(1024):
+    # if not block:
+    # break
+    # handle.write(block)
+    # img1 = Image.open('pic1.jpg')
+    # img2 = img1.rotate(180, expand=True)
+    # img2.save('pic2.jpg')
+    # await message.channel.send(file=discord.File('pic2.jpg'))
+
 
 client.run(token)
