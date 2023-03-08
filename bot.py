@@ -231,14 +231,14 @@ async def on_message(message):
     if message.content.startswith('!status'):
         await message.channel.send('```' + asciilogo + os.popen("screenfetch -N -n -d '-host'").read() + '```')
 
-    if message.content.startswith('!ascii'):
-        async with message.channel.typing():
-            if len(message.attachments) > 0:  # If the user included an image
-                filename = '/home/enicely/lastimage'
-                await message.attachments[0].save(filename)
-                im1 = Image.open(filename).convert('RGB')
-                im1.save(filename + '.jpg')
-                await message.channel.send('```' + os.popen('jp2a ' + filename + '.jpg --width=44').read() + '```')
+    # if message.content.startswith('!ascii'):
+    #     async with message.channel.typing():
+    #         if len(message.attachments) > 0:  # If the user included an image
+    #             filename = '/tmp/lastimage'
+    #             await message.attachments[0].save(filename)
+    #             im1 = Image.open(filename).convert('RGB')
+    #             im1.save(filename + '.jpg')
+    #             await message.channel.send('```' + os.popen('jp2a ' + filename + '.jpg --width=44').read() + '```')
 
     if message.content.startswith('uwu') or message.content.startswith('owo'):
         await message.channel.send(uwu.uwuify_string(message.content[4:]))
