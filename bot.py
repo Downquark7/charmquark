@@ -17,7 +17,7 @@ from config import postsUrl
 from config import weatherUrl
 from config import forecastUrl
 from config import openaikey
-from config import apiprompt
+from config import aiprompt
 
 openai.api_key = openaikey
 
