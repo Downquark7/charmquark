@@ -83,8 +83,7 @@ async def on_message(message):
             client.hist[message.channel.id].append({"role": "user", "content": message.content})
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=client.hist[message.channel.id],
-                max_tokens=64
+                messages=client.hist[message.channel.id]
             )
             client.hist[message.channel.id].append(
                 {"role": "assistant", "content": response['choices'][0]['message']['content']})
