@@ -40,28 +40,28 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    if message.content.startswith("exit()"):
-        exit()
-
-    async with message.channel.typing():
-        if message.channel.id not in client.hist:
-            client.hist[message.channel.id] = aiprompt.copy()
-        client.hist[message.channel.id].append(
-            {"role": "user", "content": "<@{0.author.id}>: ".format(message) + message.content})
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=client.hist[message.channel.id],
-            max_tokens=100
-        )
-        print(response['usage']['total_tokens'])
-        if response['usage']['total_tokens'] > 3000:
-            client.hist[message.channel.id] = aiprompt.copy()
+    if client.user.mentioned_in(message) or isinstance(message.channel, discord.channel.DMChannel):
+        if message.content.startswith("exit()"):
+            exit()
+        async with message.channel.typing():
+            if message.channel.id not in client.hist:
+                client.hist[message.channel.id] = aiprompt.copy()
             client.hist[message.channel.id].append(
                 {"role": "user", "content": "<@{0.author.id}>: ".format(message) + message.content})
-            await message.channel.send("Message history cleared nya~")
-        client.hist[message.channel.id].append(
-            {"role": "assistant", "content": response['choices'][0]['message']['content']})
-        await message.channel.send(response['choices'][0]['message']['content'])
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=client.hist[message.channel.id],
+                max_tokens=100
+            )
+            print(response['usage']['total_tokens'])
+            if response['usage']['total_tokens'] > 3000:
+                client.hist[message.channel.id] = aiprompt.copy()
+                client.hist[message.channel.id].append(
+                    {"role": "user", "content": "<@{0.author.id}>: ".format(message) + message.content})
+                await message.channel.send("Message history cleared nya~")
+            client.hist[message.channel.id].append(
+                {"role": "assistant", "content": response['choices'][0]['message']['content']})
+            await message.channel.send(response['choices'][0]['message']['content'])
 
 
 client.run(token)
