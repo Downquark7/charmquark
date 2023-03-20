@@ -50,7 +50,8 @@ async def on_message(message):
                 {"role": "user", "content": message.content + " name=<@{0.author.id}>".format(message)})
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=client.hist[message.channel.id]
+                messages=client.hist[message.channel.id],
+                max_tokens=100
             )
             print(response['usage']['total_tokens'])
             if response['usage']['total_tokens'] > 3000:
