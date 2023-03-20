@@ -1,18 +1,15 @@
 import discord
 import openai
-
 from config import token
 from config import openaikey
 from config import aiprompt
 
 openai.api_key = openaikey
-
 dance = '<a:dance1:779548089547620352><a:dance2:779548089228722187><a:dance3:779548089509740545>'
-
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
-
 client.hist = {}
+
 
 @client.event
 async def on_ready():
