@@ -30,9 +30,6 @@ async def on_ready():
     aiprompt.insert(0,
                     {"role": "system",
                      "content": "You can send the torture dance gif from jjba by typing \"" + dance + "\""})
-    aiprompt.insert(0, {"role": "system",
-                        "content": "You receive messages from multiple people in the format of \"name: message\" so you "
-                                   "can differentiate between people and call them by name"})
 
 
 @client.event
@@ -47,7 +44,7 @@ async def on_message(message):
             if message.channel.id not in client.hist:
                 client.hist[message.channel.id] = aiprompt.copy()
             client.hist[message.channel.id].append(
-                {"role": "user", "content": "<@{0.author.id}>: ".format(message) + message.content})
+                {"role": "user", "content": message.content + " --name=<@{0.author.id}>".format(message)})
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=client.hist[message.channel.id]
@@ -56,7 +53,7 @@ async def on_message(message):
             if response['usage']['total_tokens'] > 3000:
                 client.hist[message.channel.id] = aiprompt.copy()
                 client.hist[message.channel.id].append(
-                    {"role": "user", "content": "<@{0.author.id}>: ".format(message) + message.content})
+                    {"role": "user", "content": message.content + " --name=<@{0.author.id}>".format(message)})
                 await message.channel.send("Message history cleared nya~")
             client.hist[message.channel.id].append(
                 {"role": "assistant", "content": response['choices'][0]['message']['content']})
